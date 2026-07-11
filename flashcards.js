@@ -2,12 +2,11 @@
 // Generates flip-style flashcards from a note's fullText using Gemini.
 
 import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
+import { app } from "./firebase-init.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// ---- Imports (add to your flashcards.html <script type="module">) ----
-// import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-const db = getFirestore();
+const db = getFirestore(app);
 
 const GENERATE_PROXY_URL = "/.netlify/functions/generate";
 
