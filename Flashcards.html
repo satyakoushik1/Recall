@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recall — Flashcards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F1F2EE; --cream-2:#E9EAE3; --ink:#0C0C09; --salmon:#F6A98C; --muted:#6B6B60; --line:rgba(12,12,9,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--line);}
+  .logo{font-family:'Fraunces',serif;font-weight:600;font-size:19px;display:flex;align-items:center;gap:8px;}
+  .logo .dot{width:8px;height:8px;border-radius:50%;background:var(--salmon);}
+  a{color:inherit;text-decoration:none;}
+  .back{font-size:13.5px;color:var(--muted);}
+  .back:hover{color:var(--ink);}
+
+  main{max-width:520px;margin:0 auto;padding:64px 24px;text-align:center;}
+  .flashcard-status{font-size:13px;color:var(--muted);margin:0 0 24px;letter-spacing:0.02em;}
+
+  .flashcard{
+    background:#fff;border:1px solid var(--line);border-radius:20px;
+    min-height:260px;display:flex;align-items:center;justify-content:center;padding:40px 32px;
+    cursor:pointer;position:relative;
+  }
+  .flashcard:hover{border-color:var(--salmon);}
+  .card-front, .card-back{
+    font-family:'Fraunces',serif;font-weight:500;font-size:20px;line-height:1.5;margin:0;
+  }
+  .card-back{color:var(--muted);font-family:'Inter',sans-serif;font-weight:400;font-size:15px;}
+  .flip-hint{font-size:12px;color:var(--muted);margin:16px 0 32px;}
+
+  .nav-row{display:flex;justify-content:center;gap:12px;}
+  .nav-row button{
+    background:var(--ink);color:var(--cream);border:none;border-radius:100px;
+    padding:10px 22px;font-size:13.5px;font-weight:600;cursor:pointer;
+  }
+  .nav-row button:hover{background:#000;}
+</style>
+</head>
+<body>
+  <header>
+    <a class="back" href="dashboard.html">← Back</a>
+    <div class="logo"><span class="dot"></span>Recall</div>
+    <div style="width:50px;"></div>
+  </header>
+  <main>
+    <p class="flashcard-status">Generating flashcards…</p>
+    <div class="flashcard">
+      <p class="card-front"></p>
+      <p class="card-back" style="display:none;"></p>
+    </div>
+    <p class="flip-hint">Tap the card to flip</p>
+    <div class="nav-row">
+      <button class="prev-btn">← Previous</button>
+      <button class="next-btn">Next →</button>
+    </div>
+  </main>
+
+  <script type="module" src="flashcards.js"></script>
+</body>
+</html>
