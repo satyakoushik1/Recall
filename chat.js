@@ -3,12 +3,12 @@
 // streams the answer back. No Firestore persistence — in-memory per session.
 
 import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
+import { app } from "./firebase-init.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// ---- Imports (add to your chat.html <script type="module">) ----
-// import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-const db = getFirestore();
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 const CHAT_PROXY_URL = "/api/chat-stream";
 
