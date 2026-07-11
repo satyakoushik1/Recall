@@ -3,6 +3,8 @@
 // No streaming here — quiz needs the full structured JSON before rendering.
 
 import { GEMINI_API_KEY } from "./config.js";
+import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // ---- Imports (add to your quiz.html <script type="module">) ----
 // import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -19,6 +21,14 @@ let userAnswers = [];   // parallel array of selected option indices
 // 1. Load note + generate quiz on page load
 // ---------------------------------------------------------------------------
 async function loadAndGenerateQuiz(noteId, numQuestions = 5) {
+  const uid = getAuth().currentUser?.uid;
+  const usage = await checkAndConsumeDailyLimit(uid);
+  if (!usage.allowed) {
+    document.querySelector(".quiz-status").textContent =
+      `Your daily limit is over. You get ${DAILY_LIMIT} AI requests per day — come back tomorrow.`;
+    return;
+  }
+
   const noteRef = doc(db, "notes", noteId);
   const snap = await getDoc(noteRef);
 
@@ -136,9 +146,9 @@ function handleAnswerClick(e) {
   buttons.forEach((btn, i) => {
     btn.disabled = true;
     if (i === question.correctIndex) {
-      btn.style.borderColor = "green";
+      btn.classList.add("correct");
     } else if (i === oIndex) {
-      btn.style.borderColor = "red";
+      btn.classList.add("incorrect");
     }
   });
 
