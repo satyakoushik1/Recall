@@ -1,6 +1,7 @@
 [build]
+  command = "node build.js"
   functions = "netlify/functions"
-  publish = "."
+  publish = "dist"
 
 [[edge_functions]]
   function = "chat-stream"
