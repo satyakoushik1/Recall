@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recall — Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F1F2EE; --cream-2:#E9EAE3; --ink:#0C0C09; --salmon:#F6A98C; --muted:#6B6B60; --line:rgba(12,12,9,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--line);}
+  .logo{font-family:'Fraunces',serif;font-weight:600;font-size:19px;display:flex;align-items:center;gap:8px;}
+  .logo .dot{width:8px;height:8px;border-radius:50%;background:var(--salmon);}
+  a{color:inherit;text-decoration:none;}
+  .back{font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .back:hover{color:var(--ink);}
+  .chat-title{font-family:'Fraunces',serif;font-weight:500;font-size:16px;margin:0;color:var(--muted);text-align:center;flex:1;}
+
+  main{max-width:680px;margin:0 auto;padding:32px 24px 140px;width:100%;flex:1;}
+  .chat-messages{display:flex;flex-direction:column;gap:16px;}
+  .message{display:flex;}
+  .message.user{justify-content:flex-end;}
+  .message.model{justify-content:flex-start;}
+  .message p{
+    margin:0;padding:12px 16px;border-radius:16px;font-size:14.5px;line-height:1.6;max-width:80%;white-space:pre-wrap;
+  }
+  .message.user p{background:var(--ink);color:var(--cream);border-bottom-right-radius:4px;}
+  .message.model p{background:var(--cream-2);color:var(--ink);border-bottom-left-radius:4px;}
+  .empty-chat{text-align:center;color:var(--muted);font-size:14px;padding:60px 0;}
+
+  .chat-form{
+    position:fixed;bottom:0;left:0;right:0;background:var(--cream);border-top:1px solid var(--line);
+    padding:16px 24px;display:flex;justify-content:center;
+  }
+  .chat-form-inner{display:flex;gap:10px;max-width:680px;width:100%;}
+  .chat-input{
+    flex:1;padding:12px 16px;border-radius:100px;border:1px solid var(--line);background:#fff;
+    font-family:'Inter',sans-serif;font-size:14.5px;color:var(--ink);outline:none;
+  }
+  .chat-input:focus{border-color:var(--salmon);}
+  .send-btn{
+    background:var(--ink);color:var(--cream);border:none;border-radius:100px;padding:0 22px;
+    font-size:14px;font-weight:600;cursor:pointer;
+  }
+  .send-btn:disabled{opacity:0.5;cursor:default;}
+</style>
+</head>
+<body>
+  <header>
+    <a class="back" href="dashboard.html">← Back</a>
+    <p class="chat-title"></p>
+    <div style="width:60px;"></div>
+  </header>
+  <main>
+    <div class="chat-messages">
+      <p class="empty-chat">Ask anything about these notes to get started.</p>
+    </div>
+  </main>
+  <form class="chat-form">
+    <div class="chat-form-inner">
+      <input class="chat-input" type="text" placeholder="Ask about your notes..." autocomplete="off" />
+      <button class="send-btn" type="submit">Send</button>
+    </div>
+  </form>
+
+  <script type="module" src="chat.js"></script>
+</body>
+</html>
