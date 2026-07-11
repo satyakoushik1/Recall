@@ -10,7 +10,7 @@ import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const CHAT_PROXY_URL = "/api/chat-stream";
+const CHAT_PROXY_URL = "/.netlify/functions/generate";
 
 let noteFullText = "";
 let noteTitle = "";
@@ -74,40 +74,14 @@ async function sendMessage(question) {
     const response = await fetch(CHAT_PROXY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, jsonMode: false }),
     });
 
-    if (!response.ok) throw new Error(`Gemini request failed: ${response.status}`);
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop(); // keep incomplete line for next chunk
-
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const jsonStr = line.slice(6).trim();
-        if (!jsonStr) continue;
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const textPiece = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (textPiece) {
-            modelMessage.text += textPiece;
-            renderMessages();
-          }
-        } catch {
-          // partial JSON chunk, ignore and wait for more data
-        }
-      }
-    }
+    const data = await response.json();
+    modelMessage.text = data.text || "No response received.";
+    renderMessages();
   } catch (err) {
     console.error("Chat error:", err);
     modelMessage.text = "Something went wrong getting a response. Try again.";
@@ -144,10 +118,11 @@ function renderMessages() {
   container.innerHTML = messages
     .map((m, i) => {
       const isLastModelMsg = m.role === "model" && i === messages.length - 1;
-      const cursor = isLastModelMsg && m.text === "" ? '<span class="typing-cursor">●</span>' : "";
+      const isPending = isLastModelMsg && m.text === "";
+      const displayText = isPending ? "Thinking…" : escapeHtml(m.text);
       return `
         <div class="message ${m.role}">
-          <p>${escapeHtml(m.text)}${cursor}</p>
+          <p${isPending ? ' style="color: var(--muted);"' : ""}>${displayText}</p>
         </div>
       `;
     })
