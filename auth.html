@@ -288,14 +288,15 @@
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+  // Injected at build time from Netlify environment variables — see build.js
   const firebaseConfig = {
-    apiKey: "AIzaSyB690qxGTGEO6QTatWb3TSwszdaGMQxHrI",
-    authDomain: "recall-d.firebaseapp.com",
-    projectId: "recall-d",
-    storageBucket: "recall-d.firebasestorage.app",
-    messagingSenderId: "191181113133",
-    appId: "1:191181113133:web:43d6cd3b89215622dd35a4",
-    measurementId: "G-M4XVVW0KTG"
+    apiKey: "__FIREBASE_API_KEY__",
+    authDomain: "__FIREBASE_AUTH_DOMAIN__",
+    projectId: "__FIREBASE_PROJECT_ID__",
+    storageBucket: "__FIREBASE_STORAGE_BUCKET__",
+    messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
+    appId: "__FIREBASE_APP_ID__",
+    measurementId: "__FIREBASE_MEASUREMENT_ID__"
   };
 
   const app = initializeApp(firebaseConfig);
