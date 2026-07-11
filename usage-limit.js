@@ -5,8 +5,9 @@
 import {
   getFirestore, doc, getDoc, setDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { app } from "./firebase-init.js";
 
-const db = getFirestore();
+const db = getFirestore(app);
 
 const DAILY_LIMIT = 3; // total Gemini calls per user per day, across chat/quiz/flashcards/exam prediction
 
