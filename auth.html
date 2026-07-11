@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recall — Log in or sign up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F1F2EE;
+    --cream-2:#E9EAE3;
+    --ink:#0C0C09;
+    --ink-soft:#17180F;
+    --salmon:#F6A98C;
+    --muted:#6B6B60;
+    --line:rgba(12,12,9,0.14);
+    --error:#C4432E;
+    --error-bg:#FBEAE6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 20px;
+  }
+  a{color:inherit;}
+  .top-logo{
+    position:fixed;top:26px;left:32px;
+    font-family:'Fraunces',serif;font-weight:600;font-size:19px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .top-logo .dot{width:8px;height:8px;border-radius:50%;background:var(--salmon);}
+
+  .card{
+    width:100%;max-width:400px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:38px 34px 34px;
+    box-shadow:0 30px 70px -40px rgba(0,0,0,0.35);
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:26px;text-align:center;margin:0 0 6px;letter-spacing:-0.01em;
+  }
+  .sub{
+    text-align:center;font-size:13.5px;color:var(--muted);margin-bottom:26px;
+  }
+
+  .tabs{
+    display:flex;
+    background:var(--cream-2);
+    border-radius:100px;
+    padding:4px;
+    margin-bottom:26px;
+  }
+  .tab{
+    flex:1;text-align:center;padding:9px 0;border:none;background:none;
+    border-radius:100px;font-size:13.5px;font-weight:600;color:var(--muted);
+    font-family:inherit;cursor:pointer;transition:background .15s ease,color .15s ease;
+  }
+  .tab.active{background:var(--ink);color:var(--cream);}
+
+  .google-btn{
+    width:100%;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:12px 0;border-radius:100px;
+    border:1.4px solid var(--line);
+    background:#fff;
+    font-size:14px;font-weight:600;
+    margin-bottom:18px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .google-btn:hover{border-color:rgba(12,12,9,0.35);background:var(--cream-2);}
+  .google-btn:disabled{opacity:0.6;cursor:default;}
+  .google-btn svg{width:18px;height:18px;}
+
+  .divider{
+    display:flex;align-items:center;gap:12px;
+    margin-bottom:20px;
+    font-size:12px;color:var(--muted);
+  }
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-size:12.5px;font-weight:600;margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    padding:11px 13px;
+    border-radius:10px;
+    border:1.4px solid var(--line);
+    font-size:14.5px;
+    font-family:inherit;
+    background:var(--cream);
+    color:var(--ink);
+    transition:border-color .15s ease;
+  }
+  .field input:focus{outline:none;border-color:var(--ink);}
+  .field input.invalid{border-color:var(--error);}
+  .field-error{
+    font-size:12px;color:var(--error);margin-top:5px;display:none;
+  }
+  .field-error.show{display:block;}
+
+  .forgot{
+    text-align:right;font-size:12.5px;color:var(--muted);
+    margin:-6px 0 16px;
+  }
+  .forgot a{text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
+  .forgot a:hover{color:var(--ink);}
+
+  .banner{
+    display:none;
+    background:var(--error-bg);
+    color:var(--error);
+    border-radius:10px;
+    padding:11px 14px;
+    font-size:13px;
+    margin-bottom:18px;
+    line-height:1.4;
+  }
+  .banner.show{display:block;}
+  .banner.info{background:var(--cream-2);color:var(--ink-soft);}
+
+  .submit-btn{
+    width:100%;
+    padding:13px 0;
+    border-radius:100px;
+    background:var(--ink);
+    color:var(--cream);
+    font-size:14.5px;font-weight:600;
+    border:none;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:opacity .15s ease;
+  }
+  .submit-btn:hover{opacity:0.88;}
+  .submit-btn:disabled{opacity:0.7;cursor:default;}
+
+  .spinner{
+    width:15px;height:15px;border-radius:50%;
+    border:2px solid rgba(241,242,238,0.35);
+    border-top-color:var(--cream);
+    animation:spin .7s linear infinite;
+    display:none;
+  }
+  .spinner.show{display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .footnote{
+    text-align:center;font-size:12px;color:var(--muted);margin-top:20px;line-height:1.5;
+  }
+  .footnote a{text-decoration:underline;text-underline-offset:2px;}
+
+  .form-panel{display:none;}
+  .form-panel.active{display:block;}
+
+  .success-panel{display:none;text-align:center;padding:12px 0 4px;}
+  .success-panel.active{display:block;}
+  .success-icon{
+    width:52px;height:52px;border-radius:50%;background:var(--cream-2);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+  }
+  .success-panel h2{font-family:'Fraunces',serif;font-weight:500;font-size:21px;margin:0 0 8px;}
+  .success-panel p{font-size:13.5px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<a class="top-logo" href="index.html"><span class="dot"></span>Recall</a>
+
+<div class="card">
+
+  <!-- ============ AUTH FORM VIEW ============ -->
+  <div id="authView">
+    <h1>Welcome to Recall</h1>
+    <p class="sub">Chat with your notes. Study smarter.</p>
+
+    <div class="tabs">
+      <button class="tab active" id="tabSignup" onclick="switchTab('signup')">Sign up</button>
+      <button class="tab" id="tabLogin" onclick="switchTab('login')">Log in</button>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <!-- SIGN UP -->
+    <div class="form-panel active" id="panelSignup">
+      <button type="button" class="google-btn" id="googleBtnSignup" onclick="handleGoogle()">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34 6.5 29.3 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5Z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.6 18.9 12.5 24 12.5c3.1 0 5.8 1.1 8 3l6-6C34 6.5 29.3 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2Z"/><path fill="#4CAF50" d="M24 43.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.2-7.2 2.2-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39 16.2 43.5 24 43.5Z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.2-.1-2.4-.4-3.5Z"/></svg>
+        Continue with Google
+      </button>
+      <div class="divider">or with email</div>
+
+      <form id="signupForm" novalidate>
+        <div class="field">
+          <label for="suEmail">Email</label>
+          <input type="text" id="suEmail" autocomplete="email" placeholder="you@school.edu">
+          <div class="field-error" id="suEmailError">Enter a valid email.</div>
+        </div>
+        <div class="field">
+          <label for="suPassword">Password</label>
+          <input type="password" id="suPassword" autocomplete="new-password" placeholder="At least 8 characters">
+          <div class="field-error" id="suPasswordError">Password must be at least 8 characters.</div>
+        </div>
+        <div class="field">
+          <label for="suConfirm">Confirm password</label>
+          <input type="password" id="suConfirm" autocomplete="new-password" placeholder="Re-enter your password">
+          <div class="field-error" id="suConfirmError">Passwords don't match.</div>
+        </div>
+        <button type="submit" class="submit-btn" id="signupSubmit">
+          <span class="spinner" id="signupSpinner"></span>
+          <span id="signupSubmitText">Create account</span>
+        </button>
+      </form>
+      <p class="footnote">By signing up, you agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
+    </div>
+
+    <!-- LOG IN -->
+    <div class="form-panel" id="panelLogin">
+      <button type="button" class="google-btn" id="googleBtnLogin" onclick="handleGoogle()">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34 6.5 29.3 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5Z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.6 18.9 12.5 24 12.5c3.1 0 5.8 1.1 8 3l6-6C34 6.5 29.3 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2Z"/><path fill="#4CAF50" d="M24 43.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.2-7.2 2.2-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39 16.2 43.5 24 43.5Z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.2-.1-2.4-.4-3.5Z"/></svg>
+        Continue with Google
+      </button>
+      <div class="divider">or with email</div>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="liEmail">Email</label>
+          <input type="text" id="liEmail" autocomplete="email" placeholder="you@school.edu">
+          <div class="field-error" id="liEmailError">Enter a valid email.</div>
+        </div>
+        <div class="field">
+          <label for="liPassword">Password</label>
+          <input type="password" id="liPassword" autocomplete="current-password" placeholder="Your password">
+          <div class="field-error" id="liPasswordError">Enter your password.</div>
+        </div>
+        <p class="forgot"><a onclick="handleForgot(event)">Forgot password?</a></p>
+        <button type="submit" class="submit-btn" id="loginSubmit">
+          <span class="spinner" id="loginSpinner"></span>
+          <span id="loginSubmitText">Log in</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ SUCCESS VIEW ============ -->
+  <div class="success-panel" id="successView">
+    <div class="success-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#0C0C09" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h2>You're in.</h2>
+    <p id="successMsg">Your account is ready. Let's upload your first set of notes.</p>
+    <a class="submit-btn" href="dashboard.html" style="text-decoration:none;">Go to your dashboard</a>
+  </div>
+
+</div>
+
+<script type="module">
+  // ---------- Firebase ----------
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB690qxGTGEO6QTatWb3TSwszdaGMQxHrI",
+    authDomain: "recall-d.firebaseapp.com",
+    projectId: "recall-d",
+    storageBucket: "recall-d.firebasestorage.app",
+    messagingSenderId: "191181113133",
+    appId: "1:191181113133:web:43d6cd3b89215622dd35a4",
+    measurementId: "G-M4XVVW0KTG"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  // Analytics can fail to init in some environments (e.g. no https, blockers) — don't let it break auth.
+  try { getAnalytics(app); } catch (e) { console.warn("Analytics not initialized:", e); }
+
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const googleProvider = new GoogleAuthProvider();
+
+  // ---------- helpers ----------
+  function isValidEmail(v){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+  function setError(input, errorEl, show){
+    input.classList.toggle('invalid', show);
+    errorEl.classList.toggle('show', show);
+  }
+  function showBanner(msg, isInfo){
+    const b = document.getElementById('banner');
+    b.textContent = msg;
+    b.classList.toggle('info', !!isInfo);
+    b.classList.add('show');
+  }
+  function hideBanner(){
+    const b = document.getElementById('banner');
+    b.classList.remove('show');
+    b.classList.remove('info');
+  }
+
+  // Friendly copy for Firebase Auth error codes
+  function friendlyAuthError(err){
+    const code = err && err.code ? err.code : '';
+    switch(code){
+      case 'auth/email-already-in-use':
+        return 'An account with that email already exists. Try logging in instead.';
+      case 'auth/weak-password':
+        return 'Password must be at least 6 characters.';
+      case 'auth/invalid-email':
+        return 'Enter a valid email address.';
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Incorrect email or password.';
+      case 'auth/too-many-requests':
+        return 'Too many attempts. Please wait a moment and try again.';
+      case 'auth/popup-closed-by-user':
+      case 'auth/cancelled-popup-request':
+        return ''; // user just closed the popup — no need to alarm them
+      case 'auth/network-request-failed':
+        return 'Network error. Check your connection and try again.';
+      default:
+        return 'Something went wrong. Please try again.';
+    }
+  }
+
+  // Ensure a users/{uid} doc exists (used for both email and Google sign-up)
+  async function ensureUserDoc(user){
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    if(!snap.exists()){
+      await setDoc(ref, {
+        uid: user.uid,
+        email: user.email || null,
+        displayName: user.displayName || null,
+        photoURL: user.photoURL || null,
+        provider: user.providerData && user.providerData[0] ? user.providerData[0].providerId : 'password',
+        createdAt: serverTimestamp()
+      });
+    }
+    return snap.exists();
+  }
+
+  function goToSuccess(message){
+    document.getElementById('authView').style.display = 'none';
+    document.getElementById('successView').classList.add('active');
+    document.getElementById('successMsg').textContent = message;
+  }
+
+  // ---------- tabs ----------
+  window.switchTab = function(which){
+    hideBanner();
+    const isSignup = which === 'signup';
+    document.getElementById('tabSignup').classList.toggle('active', isSignup);
+    document.getElementById('tabLogin').classList.toggle('active', !isSignup);
+    document.getElementById('panelSignup').classList.toggle('active', isSignup);
+    document.getElementById('panelLogin').classList.toggle('active', !isSignup);
+  };
+
+  // preselect tab from ?tab= query param
+  (function(){
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if(tab === 'login') window.switchTab('login');
+  })();
+
+  // ---------- Google sign-in ----------
+  window.handleGoogle = async function(){
+    hideBanner();
+    const btns = [document.getElementById('googleBtnSignup'), document.getElementById('googleBtnLogin')];
+    btns.forEach(b => b.disabled = true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const isNewUser = await ensureUserDoc(result.user);
+      goToSuccess(isNewUser
+        ? "Welcome back — taking you to your notes."
+        : "Your account is ready. Let's upload your first set of notes.");
+    } catch (err) {
+      console.error(err);
+      const msg = friendlyAuthError(err);
+      if(msg) showBanner(msg);
+    } finally {
+      btns.forEach(b => b.disabled = false);
+    }
+  };
+
+  // ---------- forgot password ----------
+  window.handleForgot = async function(e){
+    e.preventDefault();
+    hideBanner();
+    const emailInput = document.getElementById('liEmail');
+    const email = emailInput.value.trim();
+    if(!isValidEmail(email)){
+      showBanner('Enter your email above first, then click "Forgot password?"');
+      emailInput.focus();
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showBanner(`Password reset email sent to ${email}.`, true);
+    } catch (err) {
+      console.error(err);
+      showBanner(friendlyAuthError(err) || 'Could not send reset email. Try again.');
+    }
+  };
+
+  // ---------- sign up ----------
+  document.getElementById('signupForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    hideBanner();
+
+    const email = document.getElementById('suEmail');
+    const password = document.getElementById('suPassword');
+    const confirm = document.getElementById('suConfirm');
+
+    const emailValid = isValidEmail(email.value.trim());
+    const passwordValid = password.value.length >= 8;
+    const confirmValid = confirm.value === password.value && password.value.length > 0;
+
+    setError(email, document.getElementById('suEmailError'), !emailValid);
+    setError(password, document.getElementById('suPasswordError'), !passwordValid);
+    setError(confirm, document.getElementById('suConfirmError'), !confirmValid);
+
+    if(!emailValid || !passwordValid || !confirmValid) return;
+
+    const btn = document.getElementById('signupSubmit');
+    const spinner = document.getElementById('signupSpinner');
+    const text = document.getElementById('signupSubmitText');
+    btn.disabled = true;
+    spinner.classList.add('show');
+    text.textContent = 'Creating account…';
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email.value.trim(), password.value);
+      await ensureUserDoc(cred.user);
+      goToSuccess("Your account is ready. Let's upload your first set of notes.");
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      spinner.classList.remove('show');
+      text.textContent = 'Create account';
+      showBanner(friendlyAuthError(err));
+    }
+  });
+
+  // ---------- log in ----------
+  document.getElementById('loginForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    hideBanner();
+
+    const email = document.getElementById('liEmail');
+    const password = document.getElementById('liPassword');
+
+    const emailValid = isValidEmail(email.value.trim());
+    const passwordValid = password.value.length > 0;
+
+    setError(email, document.getElementById('liEmailError'), !emailValid);
+    setError(password, document.getElementById('liPasswordError'), !passwordValid);
+
+    if(!emailValid || !passwordValid) return;
+
+    const btn = document.getElementById('loginSubmit');
+    const spinner = document.getElementById('loginSpinner');
+    const text = document.getElementById('loginSubmitText');
+    btn.disabled = true;
+    spinner.classList.add('show');
+    text.textContent = 'Logging in…';
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email.value.trim(), password.value);
+      await ensureUserDoc(cred.user); // safety net in case the doc is missing
+      goToSuccess('Welcome back — taking you to your notes.');
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      spinner.classList.remove('show');
+      text.textContent = 'Log in';
+      showBanner(friendlyAuthError(err));
+    }
+  });
+
+  // live-clear individual field errors as the person types
+  [
+    ['suEmail','suEmailError'],['suPassword','suPasswordError'],['suConfirm','suConfirmError'],
+    ['liEmail','liEmailError'],['liPassword','liPasswordError']
+  ].forEach(function(pair){
+    const input = document.getElementById(pair[0]);
+    const err = document.getElementById(pair[1]);
+    input.addEventListener('input', function(){
+      if(input.classList.contains('invalid')){
+        setError(input, err, false);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
