@@ -3,6 +3,8 @@
 // in the uploaded material. No real past-exam data — purely content-derived.
 
 import { GEMINI_API_KEY } from "./config.js";
+import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // ---- Imports (add to your exam-prediction.html <script type="module">) ----
 // import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -16,6 +18,14 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
 // 1. Load one or more notes and generate the prediction
 // ---------------------------------------------------------------------------
 async function loadAndPredict(noteIds) {
+  const uid = getAuth().currentUser?.uid;
+  const usage = await checkAndConsumeDailyLimit(uid);
+  if (!usage.allowed) {
+    document.querySelector(".predict-status").textContent =
+      `Your daily limit is over. You get ${DAILY_LIMIT} AI requests per day — come back tomorrow.`;
+    return;
+  }
+
   document.querySelector(".predict-status").textContent = "Analyzing your notes…";
 
   try {
