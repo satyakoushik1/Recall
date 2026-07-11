@@ -3,6 +3,8 @@
 // streams the answer back. No Firestore persistence — in-memory per session.
 
 import { GEMINI_API_KEY } from "./config.js";
+import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // ---- Imports (add to your chat.html <script type="module">) ----
 // import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -43,6 +45,18 @@ async function loadNote(noteId) {
 // ---------------------------------------------------------------------------
 async function sendMessage(question) {
   if (!question.trim()) return;
+
+  const uid = getAuth().currentUser?.uid;
+  const usage = await checkAndConsumeDailyLimit(uid);
+  if (!usage.allowed) {
+    messages.push({ role: "user", text: question });
+    messages.push({
+      role: "model",
+      text: `Your daily limit is over. You get ${DAILY_LIMIT} AI requests per day — come back tomorrow.`,
+    });
+    renderMessages();
+    return;
+  }
 
   messages.push({ role: "user", text: question });
   renderMessages();
@@ -132,13 +146,15 @@ ${recentHistory}`;
 function renderMessages() {
   const container = document.querySelector(".chat-messages");
   container.innerHTML = messages
-    .map(
-      (m) => `
-      <div class="message ${m.role}">
-        <p>${escapeHtml(m.text)}</p>
-      </div>
-    `
-    )
+    .map((m, i) => {
+      const isLastModelMsg = m.role === "model" && i === messages.length - 1;
+      const cursor = isLastModelMsg && m.text === "" ? '<span class="typing-cursor">●</span>' : "";
+      return `
+        <div class="message ${m.role}">
+          <p>${escapeHtml(m.text)}${cursor}</p>
+        </div>
+      `;
+    })
     .join("");
   container.scrollTop = container.scrollHeight;
 }
