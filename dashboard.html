@@ -29,6 +29,15 @@
   a{color:inherit;text-decoration:none;}
   .signout{font-size:13.5px;color:var(--muted);}
   .signout:hover{color:var(--ink);}
+  .user-info{display:flex;align-items:center;gap:12px;}
+  .avatar{
+    width:30px;height:30px;border-radius:50%;background:var(--salmon);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:13px;color:var(--ink);
+    overflow:hidden;
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;}
+  .user-email{font-size:13px;color:var(--muted);}
 
   main{max-width:720px;margin:0 auto;padding:64px 24px;}
 
@@ -84,7 +93,11 @@
 <body>
   <header>
     <div class="logo"><span class="dot"></span>Recall</div>
-    <a class="signout" href="index.html">Sign out</a>
+    <div class="user-info">
+      <div class="avatar" id="avatar"></div>
+      <span class="user-email" id="userEmail"></span>
+      <a class="signout" href="#" id="signOutBtn">Sign out</a>
+    </div>
   </header>
 
   <main>
@@ -94,16 +107,29 @@
   <input type="file" id="fileInput" accept="application/pdf" style="display:none;" />
 
   <script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import {
       getFirestore, doc, collection, setDoc, updateDoc, serverTimestamp,
       query, where, onSnapshot,
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    // If your Firebase app is initialized in another file (e.g. firebase-init.js),
-    // import { app } from "./firebase-init.js"; and pass it to getFirestore(app)/getAuth(app) instead.
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-    const db = getFirestore();
-    const auth = getAuth();
+    // Injected at build time from Netlify environment variables — see build.js
+    const firebaseConfig = {
+      apiKey: "__FIREBASE_API_KEY__",
+      authDomain: "__FIREBASE_AUTH_DOMAIN__",
+      projectId: "__FIREBASE_PROJECT_ID__",
+      storageBucket: "__FIREBASE_STORAGE_BUCKET__",
+      messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
+      appId: "__FIREBASE_APP_ID__",
+      measurementId: "__FIREBASE_MEASUREMENT_ID__",
+    };
+
+    // Avoids re-initializing if this page ever shares a bundle with another init call
+    const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+    const db = getFirestore(firebaseApp);
+    const auth = getAuth(firebaseApp);
     const fileInput = document.getElementById("fileInput");
     const app = document.getElementById("app");
 
@@ -115,7 +141,27 @@
         return;
       }
       currentUser = user;
+      renderProfile(user);
       listenToNotes(user.uid);
+    });
+
+    function renderProfile(user) {
+      const avatar = document.getElementById("avatar");
+      const emailEl = document.getElementById("userEmail");
+      emailEl.textContent = user.email || "";
+
+      if (user.photoURL) {
+        avatar.innerHTML = `<img src="${user.photoURL}" alt="" />`;
+      } else {
+        const initial = (user.displayName || user.email || "?").charAt(0).toUpperCase();
+        avatar.textContent = initial;
+      }
+    }
+
+    document.getElementById("signOutBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      window.location.href = "auth.html";
     });
 
     function listenToNotes(uid) {
