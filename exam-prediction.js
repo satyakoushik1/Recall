@@ -75,7 +75,7 @@ ${combinedText}
   const response = await fetch(GENERATE_PROXY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ prompt, jsonMode: true }),
   });
 
   if (!response.ok) throw new Error(`Request failed: ${response.status}`);
