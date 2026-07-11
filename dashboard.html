@@ -8,10 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- pdf.js — must load before notes-processing.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js";
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 </script>
 
 <style>
@@ -49,6 +49,7 @@
   }
   h1{font-family:'Fraunces',serif;font-weight:500;font-size:26px;margin:0 0 10px;letter-spacing:-0.01em;}
   .empty-state p{font-size:14.5px;color:var(--muted);line-height:1.6;margin:0 0 28px;max-width:380px;margin-left:auto;margin-right:auto;}
+  .upload-hint{font-size:12.5px !important;color:var(--muted);margin:-16px 0 28px !important;max-width:340px;}
   .btn{
     display:inline-flex;align-items:center;gap:8px;
     background:var(--ink);color:var(--cream);
@@ -82,6 +83,12 @@
   .note-card[data-status="processing"] .status-dot,
   .note-card[data-status="uploading"] .status-dot{background:var(--salmon);}
   .note-actions{font-size:13px;color:var(--muted);}
+  .retry-btn{
+    background:none;border:1px solid var(--line);border-radius:100px;
+    padding:6px 14px;font-size:12.5px;font-weight:600;color:var(--ink);
+    cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .retry-btn:hover{border-color:var(--salmon);background:var(--cream-2);}
 
   .spinner{
     width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--salmon);
@@ -134,6 +141,7 @@
     const app = document.getElementById("app");
 
     let currentUser = null;
+    let retryNoteId = null; // set when the upload is a retry of a failed note
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -184,6 +192,7 @@
             </div>
             <h1>No notes yet</h1>
             <p>Upload a PDF to start asking questions and generating quizzes.</p>
+            <p class="upload-hint">Works best with text-based PDFs — typed notes, slides, or textbook exports. Scanned pages or photos of handwriting won't extract properly.</p>
             <button class="btn" id="uploadBtn">Upload your first notes</button>
           </div>
         `;
@@ -200,6 +209,7 @@
             <h1>Your notes</h1>
             <button class="add-btn" id="uploadBtn">+ Upload</button>
           </div>
+          <p class="upload-hint" style="margin:-16px 0 24px !important;">Text-based PDFs work best — avoid scanned pages or photos of handwriting.</p>
           <div class="note-list">
             ${notes.map((n) => `
               <div class="note-card" data-status="${n.status}" data-note-id="${n.id}">
@@ -211,7 +221,9 @@
                   </p>
                 </div>
                 <div class="note-actions">
-                  ${n.status === "processing" || n.status === "uploading" ? '<div class="spinner"></div>' : (n.status === "ready" ? "Chat →" : "")}
+                  ${n.status === "processing" || n.status === "uploading" ? '<div class="spinner"></div>' : ""}
+                  ${n.status === "ready" ? "Chat →" : ""}
+                  ${n.status === "failed" ? `<button class="retry-btn" data-retry-id="${n.id}">Retry</button>` : ""}
                 </div>
               </div>
             `).join("")}
@@ -225,9 +237,20 @@
             }
           });
         });
+
+        app.querySelectorAll(".retry-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation(); // don't trigger the card's own click handler
+            retryNoteId = btn.dataset.retryId;
+            fileInput.click();
+          });
+        });
       }
 
-      document.getElementById("uploadBtn")?.addEventListener("click", () => fileInput.click());
+      document.getElementById("uploadBtn")?.addEventListener("click", () => {
+        retryNoteId = null; // fresh upload, not a retry
+        fileInput.click();
+      });
     }
 
     const MAX_PDF_SIZE = 5 * 1024 * 1024; // 5MB
@@ -250,16 +273,24 @@
     });
 
     async function processNote(file) {
-      const noteRef = doc(collection(db, "notes"));
+      const noteRef = retryNoteId
+        ? doc(db, "notes", retryNoteId)
+        : doc(collection(db, "notes"));
 
-      await setDoc(noteRef, {
+      const baseData = {
         uid: currentUser.uid,
         title: file.name.replace(/\.pdf$/i, ""),
         status: "processing",
         fullText: "",
         pageCount: 0,
-        createdAt: serverTimestamp(),
-      });
+      };
+
+      if (retryNoteId) {
+        await updateDoc(noteRef, baseData);
+      } else {
+        await setDoc(noteRef, { ...baseData, createdAt: serverTimestamp() });
+      }
+      retryNoteId = null;
 
       try {
         const { text, pageCount } = await extractTextFromPdf(file);
