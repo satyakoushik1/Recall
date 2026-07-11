@@ -6,6 +6,14 @@
 <title>Recall — Your notes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- pdf.js — must load before notes-processing.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js";
+</script>
+
 <style>
   :root{
     --cream:#F1F2EE; --cream-2:#E9EAE3; --ink:#0C0C09; --salmon:#F6A98C; --muted:#6B6B60; --line:rgba(12,12,9,0.14);
@@ -21,18 +29,56 @@
   a{color:inherit;text-decoration:none;}
   .signout{font-size:13.5px;color:var(--muted);}
   .signout:hover{color:var(--ink);}
-  main{max-width:640px;margin:0 auto;padding:100px 24px;text-align:center;}
+
+  main{max-width:720px;margin:0 auto;padding:64px 24px;}
+
+  /* Empty state */
+  .empty-state{text-align:center;padding:60px 24px;}
   .empty-icon{
     width:64px;height:64px;border-radius:18px;background:var(--cream-2);
     display:flex;align-items:center;justify-content:center;margin:0 auto 24px;
   }
   h1{font-family:'Fraunces',serif;font-weight:500;font-size:26px;margin:0 0 10px;letter-spacing:-0.01em;}
-  p{font-size:14.5px;color:var(--muted);line-height:1.6;margin:0 0 28px;}
+  .empty-state p{font-size:14.5px;color:var(--muted);line-height:1.6;margin:0 0 28px;max-width:380px;margin-left:auto;margin-right:auto;}
   .btn{
     display:inline-flex;align-items:center;gap:8px;
     background:var(--ink);color:var(--cream);
     padding:12px 24px;border-radius:100px;font-size:14px;font-weight:600;
+    border:none;cursor:pointer;font-family:'Inter',sans-serif;
   }
+  .btn:hover{background:#000;}
+
+  /* Note list */
+  .list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .list-header h1{margin:0;}
+  .add-btn{
+    background:var(--ink);color:var(--cream);border:none;border-radius:100px;
+    padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .add-btn:hover{background:#000;}
+
+  .note-list{display:flex;flex-direction:column;gap:12px;}
+  .note-card{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;display:flex;align-items:center;justify-content:space-between;
+    transition:border-color .15s ease;
+  }
+  .note-card[data-status="ready"]{cursor:pointer;}
+  .note-card[data-status="ready"]:hover{border-color:var(--salmon);}
+  .note-title{font-family:'Fraunces',serif;font-weight:500;font-size:15.5px;margin:0 0 4px;}
+  .note-status{font-size:12.5px;color:var(--muted);margin:0;display:flex;align-items:center;gap:6px;}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
+  .note-card[data-status="ready"] .status-dot{background:#4E8B5C;}
+  .note-card[data-status="failed"] .status-dot{background:#C4573B;}
+  .note-card[data-status="processing"] .status-dot,
+  .note-card[data-status="uploading"] .status-dot{background:var(--salmon);}
+  .note-actions{font-size:13px;color:var(--muted);}
+
+  .spinner{
+    width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--salmon);
+    border-radius:50%;animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -40,13 +86,175 @@
     <div class="logo"><span class="dot"></span>Recall</div>
     <a class="signout" href="index.html">Sign out</a>
   </header>
+
   <main>
-    <div class="empty-icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3V5Z" stroke="#0C0C09" stroke-width="1.6"/><path d="M4 5c0-1.1.9-2 2-2h9" stroke="#0C0C09" stroke-width="1.6" stroke-linecap="round"/></svg>
-    </div>
-    <h1>No notes yet</h1>
-    <p>Upload a PDF, a slide deck, or a photo of your notes to start asking questions and generating quizzes.</p>
-    <button class="btn">Upload your first notes</button>
+    <div id="app"></div>
   </main>
+
+  <input type="file" id="fileInput" accept="application/pdf" style="display:none;" />
+
+  <script type="module">
+    import {
+      getFirestore, doc, collection, setDoc, updateDoc, serverTimestamp,
+      query, where, onSnapshot,
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    // If your Firebase app is initialized in another file (e.g. firebase-init.js),
+    // import { app } from "./firebase-init.js"; and pass it to getFirestore(app)/getAuth(app) instead.
+
+    const db = getFirestore();
+    const auth = getAuth();
+    const fileInput = document.getElementById("fileInput");
+    const app = document.getElementById("app");
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "auth.html";
+        return;
+      }
+      currentUser = user;
+      listenToNotes(user.uid);
+    });
+
+    function listenToNotes(uid) {
+      const notesQuery = query(collection(db, "notes"), where("uid", "==", uid));
+      onSnapshot(notesQuery, (snapshot) => {
+        const notes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        notes.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        render(notes);
+      }, (err) => {
+        console.error("Firestore listener error:", err);
+      });
+    }
+
+    function render(notes) {
+      if (notes.length === 0) {
+        app.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3V5Z" stroke="#0C0C09" stroke-width="1.6"/><path d="M4 5c0-1.1.9-2 2-2h9" stroke="#0C0C09" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+            <h1>No notes yet</h1>
+            <p>Upload a PDF to start asking questions and generating quizzes.</p>
+            <button class="btn" id="uploadBtn">Upload your first notes</button>
+          </div>
+        `;
+      } else {
+        const statusLabel = {
+          uploading: "Uploading…",
+          processing: "Reading your notes…",
+          ready: "Ready",
+          failed: "Failed — tap to retry",
+        };
+
+        app.innerHTML = `
+          <div class="list-header">
+            <h1>Your notes</h1>
+            <button class="add-btn" id="uploadBtn">+ Upload</button>
+          </div>
+          <div class="note-list">
+            ${notes.map((n) => `
+              <div class="note-card" data-status="${n.status}" data-note-id="${n.id}">
+                <div>
+                  <p class="note-title">${escapeHtml(n.title)}</p>
+                  <p class="note-status">
+                    <span class="status-dot"></span>
+                    ${statusLabel[n.status] || n.status}
+                  </p>
+                </div>
+                <div class="note-actions">
+                  ${n.status === "processing" || n.status === "uploading" ? '<div class="spinner"></div>' : (n.status === "ready" ? "Chat →" : "")}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `;
+
+        app.querySelectorAll(".note-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            if (card.dataset.status === "ready") {
+              window.location.href = `chat.html?noteId=${card.dataset.noteId}`;
+            }
+          });
+        });
+      }
+
+      document.getElementById("uploadBtn")?.addEventListener("click", () => fileInput.click());
+    }
+
+    const MAX_PDF_SIZE = 5 * 1024 * 1024; // 5MB
+
+    fileInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.type !== "application/pdf") {
+        alert("Please select a PDF file.");
+        fileInput.value = "";
+        return;
+      }
+      if (file.size > MAX_PDF_SIZE) {
+        alert("This PDF is too large. Please upload a PDF under 5MB.");
+        fileInput.value = "";
+        return;
+      }
+      await processNote(file);
+      fileInput.value = "";
+    });
+
+    async function processNote(file) {
+      const noteRef = doc(collection(db, "notes"));
+
+      await setDoc(noteRef, {
+        uid: currentUser.uid,
+        title: file.name.replace(/\.pdf$/i, ""),
+        status: "processing",
+        fullText: "",
+        pageCount: 0,
+        createdAt: serverTimestamp(),
+      });
+
+      try {
+        const { text, pageCount } = await extractTextFromPdf(file);
+
+        if (!text || text.trim().length === 0) {
+          await updateDoc(noteRef, {
+            status: "failed",
+            error: "No text found — this PDF may be a scanned image.",
+          });
+          return;
+        }
+
+        await updateDoc(noteRef, { fullText: text, pageCount, status: "ready" });
+      } catch (err) {
+        console.error("Note processing failed:", err);
+        await updateDoc(noteRef, {
+          status: "failed",
+          error: "Something went wrong reading this PDF.",
+        });
+      }
+    }
+
+    async function extractTextFromPdf(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      let fullText = "";
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const content = await page.getTextContent();
+        const pageText = content.items.map((item) => item.str).join(" ");
+        fullText += pageText + "\n\n";
+      }
+      return { text: fullText.trim(), pageCount: pdf.numPages };
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
 </body>
 </html>
