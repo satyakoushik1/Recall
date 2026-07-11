@@ -129,13 +129,22 @@ function renderNoteList(notes) {
       }[note.status];
 
       return `
-        <div class="note-card" data-note-id="${note.id}" data-status="${note.status}">
+        <div class="note-card" data-note-id="${note.id}" data-status="${note.status}"
+             style="cursor: ${note.status === "ready" ? "pointer" : "default"};">
           <p class="note-title">${note.title}</p>
           <p class="note-status">${statusLabel}</p>
         </div>
       `;
     })
     .join("");
+
+  // Wire click navigation — only for notes that are ready
+  main.querySelectorAll(".note-card").forEach((card) => {
+    if (card.dataset.status !== "ready") return;
+    card.addEventListener("click", () => {
+      window.location.href = `chat.html?noteId=${card.dataset.noteId}`;
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
