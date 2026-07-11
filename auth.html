@@ -270,8 +270,7 @@
 
 <script type="module">
   // ---------- Firebase ----------
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+  import { app } from "./firebase-init.js";
   import {
     getAuth,
     GoogleAuthProvider,
@@ -287,21 +286,6 @@
     setDoc,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-  // Injected at build time from Netlify environment variables — see build.js
-  const firebaseConfig = {
-    apiKey: "__FIREBASE_API_KEY__",
-    authDomain: "__FIREBASE_AUTH_DOMAIN__",
-    projectId: "__FIREBASE_PROJECT_ID__",
-    storageBucket: "__FIREBASE_STORAGE_BUCKET__",
-    messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-    appId: "__FIREBASE_APP_ID__",
-    measurementId: "__FIREBASE_MEASUREMENT_ID__"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  // Analytics can fail to init in some environments (e.g. no https, blockers) — don't let it break auth.
-  try { getAnalytics(app); } catch (e) { console.warn("Analytics not initialized:", e); }
 
   const auth = getAuth(app);
   const db = getFirestore(app);
