@@ -2,17 +2,14 @@
 // Ranks likely exam topics from one or more notes, based on emphasis/frequency
 // in the uploaded material. No real past-exam data — purely content-derived.
 
-import { GEMINI_API_KEY } from "./config.js";
 import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
+import { app } from "./firebase-init.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// ---- Imports (add to your exam-prediction.html <script type="module">) ----
-// import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+const db = getFirestore(app);
 
-const db = getFirestore();
-
-const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const GENERATE_PROXY_URL = "/.netlify/functions/generate";
 
 // ---------------------------------------------------------------------------
 // 1. Load one or more notes and generate the prediction
@@ -75,20 +72,17 @@ Respond with ONLY valid JSON, no markdown fences, no preamble, in exactly this s
 ${combinedText}
 --- END NOTES ---`;
 
-  const response = await fetch(GEMINI_URL, {
+  const response = await fetch(GENERATE_PROXY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json" },
-    }),
+    body: JSON.stringify({ prompt }),
   });
 
-  if (!response.ok) throw new Error(`Gemini request failed: ${response.status}`);
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
 
   const data = await response.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) throw new Error("Empty response from Gemini");
+  const rawText = data.text;
+  if (!rawText) throw new Error("Empty response");
 
   return JSON.parse(rawText);
 }
