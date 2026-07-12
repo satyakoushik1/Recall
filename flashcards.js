@@ -8,7 +8,7 @@ import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10
 
 const db = getFirestore(app);
 
-const GENERATE_PROXY_URL = "/.netlify/functions/generate";
+const GENERATE_PROXY_URL = "/api/generate";
 
 let cards = []; // [{front, back}]
 let currentIndex = 0;
