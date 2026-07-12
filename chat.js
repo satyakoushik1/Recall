@@ -10,7 +10,7 @@ import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const CHAT_PROXY_URL = "/.netlify/functions/generate";
+const CHAT_PROXY_URL = "/api/generate";
 
 let noteFullText = "";
 let noteTitle = "";
