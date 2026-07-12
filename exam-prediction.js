@@ -4,7 +4,7 @@
 
 import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
 import { app } from "./firebase-init.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const db = getFirestore(app);
@@ -15,7 +15,7 @@ const GENERATE_PROXY_URL = "/api/generate";
 // 1. Load one or more notes and generate the prediction
 // ---------------------------------------------------------------------------
 async function loadAndPredict(noteIds) {
-  const uid = getAuth().currentUser?.uid;
+  const uid = getAuth(app).currentUser?.uid;
   const usage = await checkAndConsumeDailyLimit(uid);
   if (!usage.allowed) {
     document.querySelector(".predict-status").textContent =
@@ -49,9 +49,20 @@ async function loadAndPredict(noteIds) {
   }
 }
 
-// Call on page load, e.g.:
-// const noteIds = new URLSearchParams(window.location.search).get("noteIds").split(",");
-// loadAndPredict(noteIds);
+const noteIds = (new URLSearchParams(window.location.search).get("noteIds") || "").split(",").filter(Boolean);
+
+onAuthStateChanged(getAuth(app), (user) => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+  if (noteIds.length === 0) {
+    alert("No notes selected.");
+    window.location.href = "dashboard.html";
+    return;
+  }
+  loadAndPredict(noteIds);
+});
 
 // ---------------------------------------------------------------------------
 // 2. Call Gemini, ask for a ranked topic list as JSON
@@ -95,15 +106,13 @@ function renderPrediction(result) {
     "Based only on your uploaded notes — not real past exams.";
 
   const container = document.querySelector(".predict-container");
-  const likelihoodColor = { high: "red", medium: "orange", low: "gray" };
-
   container.innerHTML = result.topics
     .map(
       (t) => `
       <div class="topic-card">
         <div class="topic-header">
           <span class="topic-name">${escapeHtml(t.topic)}</span>
-          <span class="topic-likelihood" style="color: ${likelihoodColor[t.likelihood] || "gray"};">
+          <span class="topic-likelihood ${t.likelihood}">
             ${t.likelihood}
           </span>
         </div>
