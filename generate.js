@@ -1,17 +1,17 @@
-// netlify/functions/generate.js
-// Proxies Gemini requests. Key never leaves the server.
-// Env var required in Netlify dashboard: GEMINI_API_KEY
+// api/generate.js
+// Vercel serverless function — proxies Gemini requests. Key never leaves the server.
+// Env var required in Vercel dashboard: GEMINI_API_KEY
 // Send { prompt, jsonMode: true } for structured JSON output (quiz/flashcards/exam prediction),
 // or { prompt } / { prompt, jsonMode: false } for plain text output (chat).
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method not allowed" };
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { prompt, jsonMode = false } = JSON.parse(event.body || "{}");
+  const { prompt, jsonMode = false } = req.body || {};
   if (!prompt) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Missing prompt" }) };
+    return res.status(400).json({ error: "Missing prompt" });
   }
 
   const GEMINI_MODEL = "gemini-2.5-flash";
@@ -25,26 +25,22 @@ exports.handler = async (event) => {
   }
 
   try {
-    const response = await fetch(url, {
+    const geminiResponse = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return { statusCode: response.status, body: JSON.stringify({ error: errText }) };
+    if (!geminiResponse.ok) {
+      const errText = await geminiResponse.text();
+      return res.status(geminiResponse.status).json({ error: errText });
     }
 
-    const data = await response.json();
+    const data = await geminiResponse.json();
     const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: rawText }),
-    };
+    return res.status(200).json({ text: rawText });
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    return res.status(500).json({ error: err.message });
   }
-};
+}
