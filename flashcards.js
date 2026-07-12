@@ -3,7 +3,7 @@
 
 import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
 import { app } from "./firebase-init.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const db = getFirestore(app);
@@ -17,7 +17,7 @@ let currentIndex = 0;
 // 1. Load note + generate flashcards on page load
 // ---------------------------------------------------------------------------
 async function loadAndGenerateFlashcards(noteId, numCards = 10) {
-  const uid = getAuth().currentUser?.uid;
+  const uid = getAuth(app).currentUser?.uid;
   const usage = await checkAndConsumeDailyLimit(uid);
   if (!usage.allowed) {
     document.querySelector(".flashcard-status").textContent =
@@ -47,9 +47,20 @@ async function loadAndGenerateFlashcards(noteId, numCards = 10) {
   }
 }
 
-// Call on page load, e.g.:
-// const noteId = new URLSearchParams(window.location.search).get("noteId");
-// loadAndGenerateFlashcards(noteId);
+const noteId = new URLSearchParams(window.location.search).get("noteId");
+
+onAuthStateChanged(getAuth(app), (user) => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+  if (!noteId) {
+    alert("No note selected.");
+    window.location.href = "dashboard.html";
+    return;
+  }
+  loadAndGenerateFlashcards(noteId);
+});
 
 // ---------------------------------------------------------------------------
 // 2. Call Gemini, ask for strict JSON output
