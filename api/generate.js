@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: "Missing prompt" });
   }
 
-  const GEMINI_MODEL = "gemini-2.5-flash";
+  const GEMINI_MODEL = "gemini-flash-latest";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
   const requestBody = {
