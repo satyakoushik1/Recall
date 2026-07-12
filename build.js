@@ -9,7 +9,7 @@ const path = require("path");
 
 const SRC_DIR = __dirname;
 const DIST_DIR = path.join(__dirname, "dist");
-const SKIP_DIRS = new Set(["dist", "node_modules", ".git", "netlify"]);
+const SKIP_DIRS = new Set(["dist", "node_modules", ".git", "netlify", "api"]);
 
 const REPLACEMENTS = {
   __FIREBASE_API_KEY__: process.env.FIREBASE_API_KEY,
