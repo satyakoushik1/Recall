@@ -9,7 +9,7 @@ import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10
 
 const db = getFirestore(app);
 
-const GENERATE_PROXY_URL = "/.netlify/functions/generate";
+const GENERATE_PROXY_URL = "/api/generate";
 
 // ---------------------------------------------------------------------------
 // 1. Load one or more notes and generate the prediction
