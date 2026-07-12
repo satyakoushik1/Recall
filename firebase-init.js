@@ -4,7 +4,7 @@
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 
-// Injected at build time from Netlify environment variables — see build.js
+// Injected at build time from Vercel environment variables — see build.js
 const firebaseConfig = {
   apiKey: "__FIREBASE_API_KEY__",
   authDomain: "__FIREBASE_AUTH_DOMAIN__",
