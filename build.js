@@ -1,7 +1,7 @@
 // build.js
-// Runs during Netlify's build step (see netlify.toml: build.command).
+// Runs during Vercel's build step (see vercel.json: buildCommand).
 // Copies the whole project into dist/, replacing __FIREBASE_*__ placeholder
-// tokens in HTML files with real values from Netlify's environment variables.
+// tokens in HTML/JS files with real values from Vercel's environment variables.
 // This keeps the actual Firebase config out of your GitHub repo entirely.
 
 const fs = require("fs");
@@ -40,7 +40,7 @@ function copyAndReplace(srcPath, destPath) {
     let content = fs.readFileSync(srcPath, "utf8");
     for (const [token, value] of Object.entries(REPLACEMENTS)) {
       if (value === undefined) {
-        console.warn(`Warning: env var for ${token} is not set in Netlify.`);
+        console.warn(`Warning: env var for ${token} is not set in Vercel.`);
         continue;
       }
       content = content.split(token).join(value);
