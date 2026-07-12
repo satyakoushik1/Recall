@@ -4,7 +4,7 @@
 
 import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
 import { app } from "./firebase-init.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const db = getFirestore(app);
@@ -34,9 +34,20 @@ async function loadNote(noteId) {
   document.querySelector(".chat-title").textContent = noteTitle;
 }
 
-// Call on page load, e.g.:
-// const noteId = new URLSearchParams(window.location.search).get("noteId");
-// loadNote(noteId);
+const noteId = new URLSearchParams(window.location.search).get("noteId");
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+  if (!noteId) {
+    alert("No note selected.");
+    window.location.href = "dashboard.html";
+    return;
+  }
+  loadNote(noteId);
+});
 
 // ---------------------------------------------------------------------------
 // 2. Send a question, stream the answer
@@ -44,7 +55,7 @@ async function loadNote(noteId) {
 async function sendMessage(question) {
   if (!question.trim()) return;
 
-  const uid = getAuth().currentUser?.uid;
+  const uid = getAuth(app).currentUser?.uid;
   const usage = await checkAndConsumeDailyLimit(uid);
   if (!usage.allowed) {
     messages.push({ role: "user", text: question });
