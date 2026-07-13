@@ -1,4 +1,9 @@
 {
   "buildCommand": "node build.js",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "functions": {
+    "api/generate.js": {
+      "maxDuration": 30
+    }
+  }
 }
