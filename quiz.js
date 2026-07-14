@@ -44,7 +44,9 @@ async function loadAndGenerateQuiz(noteId, numQuestions = 5) {
   } catch (err) {
     console.error("Quiz generation failed:", err);
     document.querySelector(".quiz-status").textContent =
-      "Couldn't generate a quiz. Try again.";
+      (err.status === 429 || err.status === 503 || err.status === 500)
+        ? "Servers are busy right now. Please wait a few minutes and try again."
+        : "Couldn't generate a quiz. Try again.";
   }
 }
 
@@ -91,7 +93,11 @@ ${fullText}
     body: JSON.stringify({ prompt, jsonMode: true }),
   });
 
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  if (!response.ok) {
+    const err = new Error(`Request failed: ${response.status}`);
+    err.status = response.status;
+    throw err;
+  }
 
   const data = await response.json();
   const rawText = data.text;
