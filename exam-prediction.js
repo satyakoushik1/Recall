@@ -45,7 +45,9 @@ async function loadAndPredict(noteIds) {
   } catch (err) {
     console.error("Exam prediction failed:", err);
     document.querySelector(".predict-status").textContent =
-      "Couldn't generate a prediction. Try again.";
+      (err.status === 429 || err.status === 503 || err.status === 500)
+        ? "Servers are busy right now. Please wait a few minutes and try again."
+        : "Couldn't generate a prediction. Try again.";
   }
 }
 
@@ -89,7 +91,11 @@ ${combinedText}
     body: JSON.stringify({ prompt, jsonMode: true }),
   });
 
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  if (!response.ok) {
+    const err = new Error(`Request failed: ${response.status}`);
+    err.status = response.status;
+    throw err;
+  }
 
   const data = await response.json();
   const rawText = data.text;
