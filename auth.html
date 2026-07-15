@@ -408,10 +408,10 @@
       emailInput.focus();
       return;
     }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      showBanner(`Password reset email sent to ${email}.`, true);
-    } catch (err) {
+   try {
+  await sendPasswordResetEmail(auth, email);
+  showBanner(`Password reset email sent to ${email}. Check your spam/junk folder if you don't see it in a few minutes.`, true);
+} catch (err) {
       console.error(err);
       showBanner(friendlyAuthError(err) || 'Could not send reset email. Try again.');
     }
