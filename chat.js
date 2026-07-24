@@ -94,9 +94,22 @@ async function sendMessage(question) {
       throw err;
     }
 
-    const data = await response.json();
-    modelMessage.text = data.text || "No response received.";
-    renderMessages();
+    // api/generate.js streams plain text chunks (not JSON) for chat mode,
+    // so we read the response body as a stream and append chunks live.
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      modelMessage.text += decoder.decode(value, { stream: true });
+      renderMessages();
+    }
+
+    if (!modelMessage.text) {
+      modelMessage.text = "No response received.";
+      renderMessages();
+    }
   } catch (err) {
     console.error("Chat error:", err);
     modelMessage.text = (err.status === 429 || err.status === 503 || err.status === 500)
