@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<!-- pdf.js — must load before notes-processing.js -->
+<!-- pdf.js — must load before this page's script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -41,7 +41,6 @@
 
   main{max-width:720px;margin:0 auto;padding:64px 24px;}
 
-  /* Empty state */
   .empty-state{text-align:center;padding:60px 24px;}
   .empty-icon{
     width:64px;height:64px;border-radius:18px;background:var(--cream-2);
@@ -58,23 +57,25 @@
   }
   .btn:hover{background:#000;}
 
-  /* Note list */
-  .list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap;}
   .list-header h1{margin:0;}
   .add-btn{
     background:var(--ink);color:var(--cream);border:none;border-radius:100px;
     padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
   }
   .add-btn:hover{background:#000;}
+  .predict-btn{
+    background:none;color:var(--ink);border:1px solid var(--line);border-radius:100px;
+    padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .predict-btn:hover{border-color:var(--salmon);background:var(--cream-2);}
 
   .note-list{display:flex;flex-direction:column;gap:12px;}
   .note-card{
     background:#fff;border:1px solid var(--line);border-radius:14px;
     padding:18px 20px;display:flex;align-items:center;justify-content:space-between;
-    transition:border-color .15s ease;
+    transition:border-color .15s ease;flex-wrap:wrap;gap:12px;
   }
-  .note-card[data-status="ready"]{cursor:pointer;}
-  .note-card[data-status="ready"]:hover{border-color:var(--salmon);}
   .note-title{font-family:'Fraunces',serif;font-weight:500;font-size:15.5px;margin:0 0 4px;}
   .note-status{font-size:12.5px;color:var(--muted);margin:0;display:flex;align-items:center;gap:6px;}
   .status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
@@ -82,7 +83,12 @@
   .note-card[data-status="failed"] .status-dot{background:#C4573B;}
   .note-card[data-status="processing"] .status-dot,
   .note-card[data-status="uploading"] .status-dot{background:var(--salmon);}
-  .note-actions{font-size:13px;color:var(--muted);}
+  .note-actions{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;}
+  .feature-link{
+    font-size:13px;font-weight:600;color:var(--ink);padding:6px 12px;
+    border-radius:100px;border:1px solid var(--line);
+  }
+  .feature-link:hover{border-color:var(--salmon);background:var(--cream-2);}
   .retry-btn{
     background:none;border:1px solid var(--line);border-radius:100px;
     padding:6px 14px;font-size:12.5px;font-weight:600;color:var(--ink);
@@ -127,7 +133,7 @@
     const app = document.getElementById("app");
 
     let currentUser = null;
-    let retryNoteId = null; // set when the upload is a retry of a failed note
+    let retryNoteId = null;
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -193,7 +199,10 @@
         app.innerHTML = `
           <div class="list-header">
             <h1>Your notes</h1>
-            <button class="add-btn" id="uploadBtn">+ Upload</button>
+            <div style="display:flex;gap:10px;">
+              <button class="predict-btn" id="predictBtn">Predict exam topics</button>
+              <button class="add-btn" id="uploadBtn">+ Upload</button>
+            </div>
           </div>
           <p class="upload-hint" style="margin:-16px 0 24px !important;">Text-based PDFs work best — avoid scanned pages or photos of handwriting.</p>
           <div class="note-list">
@@ -208,7 +217,11 @@
                 </div>
                 <div class="note-actions">
                   ${n.status === "processing" || n.status === "uploading" ? '<div class="spinner"></div>' : ""}
-                  ${n.status === "ready" ? "Chat →" : ""}
+                  ${n.status === "ready" ? `
+                    <a class="feature-link" href="chat.html?noteId=${n.id}">Chat</a>
+                    <a class="feature-link" href="quiz.html?noteId=${n.id}">Quiz</a>
+                    <a class="feature-link" href="flashcards.html?noteId=${n.id}">Flashcards</a>
+                  ` : ""}
                   ${n.status === "failed" ? `<button class="retry-btn" data-retry-id="${n.id}">Retry</button>` : ""}
                 </div>
               </div>
@@ -216,17 +229,18 @@
           </div>
         `;
 
-        app.querySelectorAll(".note-card").forEach((card) => {
-          card.addEventListener("click", () => {
-            if (card.dataset.status === "ready") {
-              window.location.href = `chat.html?noteId=${card.dataset.noteId}`;
-            }
-          });
+        document.getElementById("predictBtn")?.addEventListener("click", () => {
+          const readyIds = notes.filter((n) => n.status === "ready").map((n) => n.id);
+          if (readyIds.length === 0) {
+            alert("Upload at least one ready note first.");
+            return;
+          }
+          window.location.href = `exam-prediction.html?noteIds=${readyIds.join(",")}`;
         });
 
         app.querySelectorAll(".retry-btn").forEach((btn) => {
           btn.addEventListener("click", (e) => {
-            e.stopPropagation(); // don't trigger the card's own click handler
+            e.stopPropagation();
             retryNoteId = btn.dataset.retryId;
             fileInput.click();
           });
@@ -234,12 +248,12 @@
       }
 
       document.getElementById("uploadBtn")?.addEventListener("click", () => {
-        retryNoteId = null; // fresh upload, not a retry
+        retryNoteId = null;
         fileInput.click();
       });
     }
 
-    const MAX_PDF_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_PDF_SIZE = 5 * 1024 * 1024;
 
     fileInput.addEventListener("change", async (e) => {
       const file = e.target.files[0];
