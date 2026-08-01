@@ -1,6 +1,5 @@
 // quiz.js
 // Generates a multiple-choice quiz from a note's fullText using Gemini.
-// No streaming here — quiz needs the full structured JSON before rendering.
 
 import { checkAndConsumeDailyLimit, DAILY_LIMIT } from "./usage-limit.js";
 import { app } from "./firebase-init.js";
@@ -11,12 +10,24 @@ const db = getFirestore(app);
 
 const GENERATE_PROXY_URL = "/api/generate";
 
-let currentQuiz = null; // { questions: [{question, options, correctIndex, explanation}] }
-let userAnswers = [];   // parallel array of selected option indices
+let currentQuiz = null;
+let userAnswers = [];
 
-// ---------------------------------------------------------------------------
-// 1. Load note + generate quiz on page load
-// ---------------------------------------------------------------------------
+const noteId = new URLSearchParams(window.location.search).get("noteId");
+
+onAuthStateChanged(getAuth(app), (user) => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+  if (!noteId) {
+    alert("No note selected.");
+    window.location.href = "dashboard.html";
+    return;
+  }
+  loadAndGenerateQuiz(noteId);
+});
+
 async function loadAndGenerateQuiz(noteId, numQuestions = 5) {
   const uid = getAuth(app).currentUser?.uid;
   const usage = await checkAndConsumeDailyLimit(uid);
@@ -50,24 +61,6 @@ async function loadAndGenerateQuiz(noteId, numQuestions = 5) {
   }
 }
 
-const noteId = new URLSearchParams(window.location.search).get("noteId");
-
-onAuthStateChanged(getAuth(app), (user) => {
-  if (!user) {
-    window.location.href = "auth.html";
-    return;
-  }
-  if (!noteId) {
-    alert("No note selected.");
-    window.location.href = "dashboard.html";
-    return;
-  }
-  loadAndGenerateQuiz(noteId);
-});
-
-// ---------------------------------------------------------------------------
-// 2. Call Gemini, ask for strict JSON output
-// ---------------------------------------------------------------------------
 async function generateQuiz(fullText, numQuestions) {
   const prompt = `You are a study assistant. Based ONLY on the notes below, create a ${numQuestions}-question multiple choice quiz.
 
@@ -106,9 +99,6 @@ ${fullText}
   return JSON.parse(rawText);
 }
 
-// ---------------------------------------------------------------------------
-// 3. Render the quiz
-// ---------------------------------------------------------------------------
 function renderQuiz() {
   const container = document.querySelector(".quiz-container");
   document.querySelector(".quiz-status").textContent = "";
@@ -140,14 +130,11 @@ function renderQuiz() {
   });
 }
 
-// ---------------------------------------------------------------------------
-// 4. Handle answer selection — show correct/incorrect immediately
-// ---------------------------------------------------------------------------
 function handleAnswerClick(e) {
   const qIndex = Number(e.target.dataset.qIndex);
   const oIndex = Number(e.target.dataset.oIndex);
 
-  if (userAnswers[qIndex] !== null) return; // already answered
+  if (userAnswers[qIndex] !== null) return;
 
   userAnswers[qIndex] = oIndex;
   const question = currentQuiz.questions[qIndex];
@@ -170,20 +157,46 @@ function handleAnswerClick(e) {
   checkIfComplete();
 }
 
-// ---------------------------------------------------------------------------
-// 5. Show final score once all questions are answered
-// ---------------------------------------------------------------------------
 function checkIfComplete() {
   if (userAnswers.some((a) => a === null)) return;
 
   const score = userAnswers.filter(
     (answer, i) => answer === currentQuiz.questions[i].correctIndex
   ).length;
+  const total = currentQuiz.questions.length;
 
-  document.querySelector(
-    ".quiz-status"
-  ).textContent = `Score: ${score} / ${currentQuiz.questions.length}`;
+  document.querySelector(".quiz-status").textContent = `Score: ${score} / ${total}`;
+
+  showCongratulationsPopup(score, total);
 }
+
+function showCongratulationsPopup(score, total) {
+  const overlay = document.getElementById("popupOverlay");
+  const scoreEl = document.getElementById("popupScore");
+  const emojiEl = document.querySelector(".popup-emoji");
+  const titleEl = document.querySelector(".popup-title");
+
+  const pct = score / total;
+  if (pct === 1) {
+    emojiEl.textContent = "🏆";
+    titleEl.textContent = "Perfect score!";
+  } else if (pct >= 0.6) {
+    emojiEl.textContent = "🎉";
+    titleEl.textContent = "Congratulations!";
+  } else {
+    emojiEl.textContent = "💪";
+    titleEl.textContent = "Quiz complete!";
+  }
+
+  scoreEl.textContent = `You scored ${score} out of ${total}`;
+
+  // slight delay so the last answer's feedback is visible before the popup covers it
+  setTimeout(() => overlay.classList.add("show"), 400);
+}
+
+document.getElementById("popupCloseBtn")?.addEventListener("click", () => {
+  document.getElementById("popupOverlay").classList.remove("show");
+});
 
 function escapeHtml(str) {
   const div = document.createElement("div");
