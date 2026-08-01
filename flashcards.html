@@ -19,27 +19,33 @@
   .back{font-size:13.5px;color:var(--muted);}
   .back:hover{color:var(--ink);}
 
-  main{max-width:520px;margin:0 auto;padding:64px 24px;text-align:center;}
-  .flashcard-status{font-size:13px;color:var(--muted);margin:0 0 24px;letter-spacing:0.02em;}
+  main{max-width:600px;margin:0 auto;padding:56px 24px;text-align:center;}
+  .flashcard-status{font-size:13px;color:var(--muted);margin:0 0 20px;letter-spacing:0.02em;}
 
   .flashcard{
-    background:#fff;border:1px solid var(--line);border-radius:20px;
-    min-height:260px;display:flex;align-items:center;justify-content:center;padding:40px 32px;
+    background:#fff;border:1px solid var(--line);border-radius:24px;
+    min-height:420px;display:flex;align-items:center;justify-content:center;padding:56px 40px;
     cursor:pointer;position:relative;
   }
   .flashcard:hover{border-color:var(--salmon);}
   .card-front, .card-back{
-    font-family:'Fraunces',serif;font-weight:500;font-size:20px;line-height:1.5;margin:0;
+    font-family:'Fraunces',serif;font-weight:500;font-size:30px;line-height:1.5;margin:0;
   }
-  .card-back{color:var(--muted);font-family:'Inter',sans-serif;font-weight:400;font-size:15px;}
-  .flip-hint{font-size:12px;color:var(--muted);margin:16px 0 32px;}
+  .card-back{color:var(--muted);font-family:'Inter',sans-serif;font-weight:400;font-size:20px;}
+  .flip-hint{font-size:12.5px;color:var(--muted);margin:20px 0 32px;}
 
   .nav-row{display:flex;justify-content:center;gap:12px;}
   .nav-row button{
     background:var(--ink);color:var(--cream);border:none;border-radius:100px;
-    padding:10px 22px;font-size:13.5px;font-weight:600;cursor:pointer;
+    padding:12px 26px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
   }
   .nav-row button:hover{background:#000;}
+
+  @media (max-width:520px){
+    .flashcard{min-height:340px;padding:40px 24px;}
+    .card-front{font-size:24px;}
+    .card-back{font-size:17px;}
+  }
 </style>
 </head>
 <body>
