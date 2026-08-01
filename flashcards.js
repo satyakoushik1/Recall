@@ -13,9 +13,21 @@ const GENERATE_PROXY_URL = "/api/generate";
 let cards = []; // [{front, back}]
 let currentIndex = 0;
 
-// ---------------------------------------------------------------------------
-// 1. Load note + generate flashcards on page load
-// ---------------------------------------------------------------------------
+const noteId = new URLSearchParams(window.location.search).get("noteId");
+
+onAuthStateChanged(getAuth(app), (user) => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+  if (!noteId) {
+    alert("No note selected.");
+    window.location.href = "dashboard.html";
+    return;
+  }
+  loadAndGenerateFlashcards(noteId);
+});
+
 async function loadAndGenerateFlashcards(noteId, numCards = 10) {
   const uid = getAuth(app).currentUser?.uid;
   const usage = await checkAndConsumeDailyLimit(uid);
@@ -49,24 +61,6 @@ async function loadAndGenerateFlashcards(noteId, numCards = 10) {
   }
 }
 
-const noteId = new URLSearchParams(window.location.search).get("noteId");
-
-onAuthStateChanged(getAuth(app), (user) => {
-  if (!user) {
-    window.location.href = "auth.html";
-    return;
-  }
-  if (!noteId) {
-    alert("No note selected.");
-    window.location.href = "dashboard.html";
-    return;
-  }
-  loadAndGenerateFlashcards(noteId);
-});
-
-// ---------------------------------------------------------------------------
-// 2. Call Gemini, ask for strict JSON output
-// ---------------------------------------------------------------------------
 async function generateFlashcards(fullText, numCards) {
   const prompt = `You are a study assistant. Based ONLY on the notes below, create ${numCards} flashcards covering the key concepts.
 
@@ -101,9 +95,6 @@ ${fullText}
   return parsed.cards;
 }
 
-// ---------------------------------------------------------------------------
-// 3. Render current card (flip on click) + nav buttons
-// ---------------------------------------------------------------------------
 function renderCard() {
   document.querySelector(".flashcard-status").textContent =
     `${currentIndex + 1} / ${cards.length}`;
